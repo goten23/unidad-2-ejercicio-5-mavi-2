@@ -1,0 +1,66 @@
+import pygame
+from Box2D import b2
+
+# Configuración de Pygame
+PPM = 32  # Píxeles por metro
+TARGET_FPS = 60
+TIME_STEP = 1.0 / TARGET_FPS
+
+# Configuración del mundo Box2D
+world = b2.world(gravity=(0, -10), doSleep=True)
+
+# Ángulo del plano inclinado en radianes
+angle = 30  # Ángulo en grados
+angle_rad = angle * (3.14159 / 180)  # Convertir a radianes
+
+# Coeficiente de fricción
+friction = 0.5
+
+# Crear el plano inclinado
+ground_body = world.CreateStaticBody(
+    position=(0, 0),
+    shapes=b2.polygonShape(vertices=[(0, 0), (50, 0), (50, 50 * 0.577), (0, 50 * 0.577)]),
+    angle=angle_rad,
+)
+
+# Crear la caja
+box_body = world.CreateDynamicBody(
+    position=(0, 10),
+    fixtures=b2.fixtureDef(
+        shape=b2.polygonShape(box=(1, 1)),
+        density=1.0,
+        friction=friction,
+    ),
+)
+
+# Configuración de Pygame
+pygame.init()
+screen = pygame.display.set_mode((800, 600))
+clock = pygame.time.Clock()
+
+# Loop de simulación
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Avanzar la simulación en el tiempo
+    world.Step(TIME_STEP, 6, 2)
+
+    # Limpiar la pantalla
+    screen.fill((255, 255, 255))
+
+    # Dibujar el plano inclinado
+    ground_vertices = [(ground_body.transform * v) * PPM for v in ground_body.fixtures[0].shape.vertices]
+    pygame.draw.polygon(screen, (0, 0, 0), ground_vertices)
+
+    # Dibujar la caja
+    box_vertices = [(box_body.transform * v) * PPM for v in box_body.fixtures[0].shape.vertices]
+    pygame.draw.polygon(screen, (255, 0, 0), box_vertices)
+
+    # Actualizar la pantalla
+    pygame.display.flip()
+    clock.tick(TARGET_FPS)
+
+pygame.quit()
